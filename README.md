@@ -1,82 +1,110 @@
-Teste Técnico – Desenvolvedor C# API
-📌 Visão Geral
+# Teste Técnico – Desenvolvedor C# API
 
-Este projeto foi desenvolvido como parte do processo seletivo para a vaga de Desenvolvedor C#.
-O sistema implementa funcionalidades de conta corrente, autenticação de usuários, movimentações financeiras e consulta de saldo.
+## 📌 Visão Geral
 
-A solução foi construída em .NET 8, utiliza Dapper para persistência de dados em SQLite, Redis para cache, autenticação via JWT e conteinerização com Docker.
+Este projeto foi desenvolvido como parte do processo seletivo. O objetivo é criar uma API para gerenciamento de contas correntes, autenticação de usuários, movimentações financeiras e transferências entre contas da mesma instituição.
 
-✅ Funcionalidades Implementadas
+A arquitetura adota boas práticas como autenticação via JWT, persistência com **Dapper**, uso de **cache com Redis** e configuração de containers via **Docker** (com `docker-compose`).
 
-Cadastro de Conta Corrente (com validação de CPF)
+---
 
-Autenticação/Login (com geração de token JWT)
+## ✅ Funcionalidades Implementadas
 
-Movimentações (depósitos e saques, com validações de tipo e valor)
+* **Cadastro de Conta Corrente**
 
-Consulta de Saldo (com otimização via Redis)
+  * Criação de contas com CPF e senha.
+  * Validação de CPF.
+  * Retorno do número da conta.
 
-Inativação de Conta Corrente
+* **Autenticação/Login**
 
-⚠️ Funcionalidades Não Implementadas
+  * Login por CPF ou número da conta.
+  * Geração de token JWT válido.
 
-Testes de integração da Transferência entre contas (não finalizados devido à comunicação entre APIs).
+* **Movimentações (Depósito e Saque)**
 
-API de Tarifas com Kafka (opcional no teste; não implementada para priorizar prazo).
+  * Registro de créditos e débitos.
+  * Validações de tipo e valor.
+  * Persistência em banco SQLite.
 
-🛠️ Tecnologias Utilizadas
+* **Consulta de Saldo**
 
-.NET 8
+  * Retorno de saldo atual da conta.
+  * Validações de conta ativa/inexistente.
+  * Uso de **cache Redis** para otimizar consultas.
 
-Dapper – ORM leve
+* **Inativação de Conta Corrente**
 
-SQLite – Banco de dados relacional
+  * Atualização do status da conta para inativo.
 
-Redis – Cache distribuído
+---
 
-JWT – Autenticação via token
+## ⚠️ Funcionalidades Não Implementadas
 
-Docker + Docker Compose – Orquestração de containers
+* **Transferência entre contas (Testes de Integração)**
 
-🚀 Como Executar o Projeto (Arquivo ZIP)
+  * Embora o conceito e endpoints tenham sido estruturados, os **testes de integração entre APIs** não foram concluídos devido ao tempo limitado.
 
-Extraia o arquivo .zip em uma pasta local.
+* **API de Tarifas com Kafka (Opcional no teste)**
 
-Certifique-se de ter instalado:
+  * Apesar do entendimento conceitual sobre mensageria e Kafka, optei por não implementar para priorizar a entrega no prazo, visto que é uma tecnologia que ainda não utilizei em produção.
 
-Docker Desktop
+---
 
-.NET 8 SDK
+## 🛠️ Tecnologias Utilizadas
 
-No diretório do projeto, execute:
+* **.NET 8**
+* **Dapper** – mapeamento objeto-relacional leve
+* **SQLite** – banco de dados relacional
+* **Redis** – cache distribuído
+* **JWT** – autenticação via token
+* **Docker** + **Docker Compose** – orquestração e execução dos containers
 
-docker compose up --build
+---
 
+## 🚀 Como Executar o Projeto
 
-Obs.: O arquivo está no formato .yml, mas funciona normalmente.
+1. Clone este repositório:
 
-Após a inicialização, acesse a documentação da API via Swagger:
+   ```bash
+   git clone <url-do-repositorio>
+   ```
 
-http://localhost:<porta>/swagger
+2. Acesse a pasta do projeto:
 
-📂 Estrutura dos Containers
+   ```bash
+   cd <nome-do-projeto>
+   ```
 
-API – aplicação principal
+3. Execute os containers (a aplicação + banco de dados + Redis):
 
-Banco de Dados (SQLite) – armazenamento de dados
+   ```bash
+   docker compose up --build
+   ```
 
-Redis – cache em memória
+   > Obs.: O arquivo está no formato `.yml` em vez de `.yaml`, mas isso não afeta o funcionamento.
 
-(Opcional para futuro) – Kafka (não implementado nesta entrega)
+4. Acesse a documentação da API via **Swagger**:
 
-🔮 Melhorias Futuras
+   ```
+   http://localhost:<porta>/swagger
+   ```
 
-Finalizar testes de integração para transferência entre contas.
+---
 
-Implementar microsserviço de Tarifas com mensageria via Kafka.
+## 📂 Estrutura dos Containers
 
-Ampliar uso de cache Redis em consultas críticas.
+* **API** – aplicação principal
+* **Banco de Dados** – SQLite
+* **Redis** – cache em memória
+* **(Opcional para futura implementação)** – Kafka, consumidores e produtores de mensagens
 
-Implementar padrões de resiliência e idempotência.
+---
 
-Preparar deploy para ambientes Kubernetes.
+## 🔮 Melhorias Futuras
+
+* Implementar testes de integração para transferência entre contas.
+* Adicionar microsserviço de **Tarifas** integrado ao Kafka.
+* Expandir uso de cache Redis para outras consultas críticas.
+* Implementar resiliência de comunicação entre APIs.
+* Ajustar deploy para ambientes Kubernetes (conforme especificação informativa do teste).
