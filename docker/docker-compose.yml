@@ -1,0 +1,74 @@
+﻿version: '3.9'
+
+services:
+
+  conta-corrente-api:
+    build:
+      context: ../src
+      dockerfile: ContaCorrente.API/Dockerfile
+    container_name: conta-corrente-api
+    ports:
+      - "5001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Default=Data Source=/data/contacorrente.db
+    volumes:
+      - ./data:/data
+    depends_on:
+      - sqlite-init
+
+  transferencia-api:
+    build:
+      context: ../src
+      dockerfile: Transferencia.API/Dockerfile
+    container_name: transferencia-api
+    ports:
+      - "5002:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Default=Data Source=/data/transferencia.db
+    volumes:
+      - ./data:/data
+    depends_on:
+      - sqlite-init
+  redis:
+    image: redis:7
+    ports:
+        - "6379:6379"
+  sqlite-init:
+    image: nouchka/sqlite3
+    container_name: sqlite-init
+    volumes:
+      - ./data:/data
+    working_dir: /data
+    entrypoint: >
+      /bin/sh -c "
+        if [ ! -f /data/contacorrente.db ]; then
+          sqlite3 /data/contacorrente.db < /data/contacorrente.sql;
+        fi &&
+        if [ ! -f /data/transferencia.db ]; then
+          sqlite3 /data/transferencia.db < /data/transferencia.sql;
+        fi &&
+        tail -f /dev/null"
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.2.1
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.2.1
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
