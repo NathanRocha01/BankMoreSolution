@@ -11,16 +11,16 @@ namespace Tarifa.Worker.Infrastructure
 
     public class TarifaRepository : ITarifaRepository
     {
-        private readonly string _connectionString;
+        private readonly DapperContext _context;
 
-        public TarifaRepository(IConfiguration config)
+        public TarifaRepository(DapperContext context)
         {
-            _connectionString = config.GetConnectionString("DefaultConnection");
+            _context = context;
         }
 
         public async Task AddAsync(TarifaE tarifa)
         {
-            using var conn = new SqliteConnection(_connectionString);
+            using var conn = _context.CreateConnection();
             await conn.ExecuteAsync(
                 "INSERT INTO tarifa (idtarifa, idcontacorrente, datamovimento, valor) VALUES (@IdTarifa, @IdContaCorrente, @DataMovimento, @Valor)",
                 tarifa

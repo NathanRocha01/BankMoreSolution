@@ -16,6 +16,8 @@ services:
       - ./data:/data
     depends_on:
       - sqlite-init
+    networks:
+      - kafka-net
 
   transferencia-api:
     build:
@@ -31,10 +33,32 @@ services:
       - ./data:/data
     depends_on:
       - sqlite-init
+    networks:
+      - kafka-net
+
+  tarifa-worker:
+    build:
+      context: ../src
+      dockerfile: Tarifa.Worker/Dockerfile
+    container_name: tarifa-worker
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Default=Data Source=/data/tarifas.db
+    volumes:
+      - ./data:/data
+    depends_on:
+      - kafka
+      - sqlite-init
+    networks:
+      - kafka-net
+
   redis:
     image: redis:7
     ports:
         - "6379:6379"
+    networks:
+      - kafka-net
+
   sqlite-init:
     image: nouchka/sqlite3
     container_name: sqlite-init
@@ -49,26 +73,56 @@ services:
         if [ ! -f /data/transferencia.db ]; then
           sqlite3 /data/transferencia.db < /data/transferencia.sql;
         fi &&
+        if [ ! -f /data/tarifas.db ]; then
+          sqlite3 /data/tarifas.db < /data/tarifas.sql;
+        fi &&
         tail -f /dev/null"
+    networks:
+      - kafka-net
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.2.1
+    image: confluentinc/cp-zookeeper:7.4.0
     container_name: zookeeper
     ports:
       - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - kafka-net
 
   kafka:
-    image: confluentinc/cp-kafka:7.2.1
-    container_name: kafka
+    image: confluentinc/cp-kafka:7.4.0
     ports:
       - "9092:9092"
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     depends_on:
       - zookeeper
+    networks:
+      - kafka-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    depends_on:
+      - kafka
+    networks:
+      - kafka-net
+
+networks:
+  kafka-net:
+    driver: bridge
