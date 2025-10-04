@@ -1,5 +1,6 @@
 ﻿using KafkaFlow;
 using KafkaFlow.Producers;
+using Shared.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,15 +29,11 @@ namespace Tarifa.Worker.Producers
                 Valor = tarifa.Valor
             };
 
-            var producer = _producerAccessor.GetProducer("tarifas-producer");
+            Console.WriteLine($"[TarifaProducer] Publicando tarifa: Conta={tarifa.IdContaCorrente}, Valor={tarifa.Valor}");
+
+            var producer = _producerAccessor.GetProducer<TarifaRealizadaMessage>();
 
             return producer.ProduceAsync(_topic, msg);
         }
-    }
-
-    public record TarifaRealizadaMessage
-    {
-        public string IdContaCorrente { get; set; }
-        public decimal Valor { get; set; }
     }
 }

@@ -4,10 +4,12 @@ using Microsoft.Extensions.Caching.Distributed;
 using Shared.Entities;
 using Shared.Exceptions;
 using Shared.Interface;
+using Shared.Messages;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Transferencia.Application.Commands;
+using Transferencia.Application.Producer;
 using Transferencia.Domain.Entities;
 using Transferencia.Domain.Interfaces;
 
@@ -20,19 +22,22 @@ namespace Transferencia.Application.Handlers
         private readonly ITransferenciaRepository _transferenciaRepository;
         private readonly IIdempotenciaRepository _idempotenciaRepository;
         private readonly ITransferenciaLogRepository _logRepository;
+        private readonly ITransferenciaProducer _producer;
 
         public EfetuarTransferenciaCommandHandler(
             IHttpContextAccessor httpContextAccessor,
             IDistributedCache cache,
             ITransferenciaRepository transferenciaRepository,
             IIdempotenciaRepository idempotenciaRepository,
-            ITransferenciaLogRepository logRepository)
+            ITransferenciaLogRepository logRepository,
+            ITransferenciaProducer producer)
         {
             _httpContextAccessor = httpContextAccessor;
             _cache = cache;
             _transferenciaRepository = transferenciaRepository;
             _logRepository = logRepository;
             _idempotenciaRepository = idempotenciaRepository;
+            _producer = producer;
         }
 
         public async Task<Unit> Handle(EfetuarTransferenciaCommand request, CancellationToken _)
@@ -86,6 +91,11 @@ namespace Transferencia.Application.Handlers
                 };
 
                 await _logRepository.CriarAsync(transferencia);
+
+                await _producer.PublicarAsync(new TransferenciaRealizadaMessage
+                {
+                    IdContaCorrenteOrigem = transferencia.IdContaCorrenteOrigem
+                });
 
                 return Unit.Value;
             }

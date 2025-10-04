@@ -1,15 +1,21 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using KafkaFlow;
+using KafkaFlow.Serializer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Shared.Messages;
 using Shared.Middlewares;
 using System.Text;
+using Transferencia.Application;
 using Transferencia.Application.Commands;
+using Transferencia.Application.Producer;
 using Transferencia.Application.Validators;
 using Transferencia.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddApplication();
 // Infrastructure
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -90,8 +96,19 @@ builder.Services.AddAuthentication("Bearer")
     });
 builder.Services.AddAuthorization();
 
+builder.Services.AddKafka(kafka => kafka
+    .AddCluster(cluster => cluster
+        .WithBrokers(new[] { builder.Configuration["Kafka:BootstrapServers"] })
+        .AddProducer<TransferenciaRealizadaMessage>(p => p
+            .DefaultTopic(builder.Configuration["Kafka:TopicTransferencias"])
+            .AddMiddlewares(m => m.AddSerializer<JsonCoreSerializer>())
+        )
+    )
+);
+
 var app = builder.Build();
 
+await app.Services.CreateKafkaBus().StartAsync();
 app.UseSwagger();
 app.UseSwaggerUI();
 

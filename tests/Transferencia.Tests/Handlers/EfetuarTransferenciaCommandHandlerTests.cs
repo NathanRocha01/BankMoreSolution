@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Transferencia.Application.Commands;
 using Transferencia.Application.Handlers;
+using Transferencia.Application.Producer;
 using Transferencia.Domain.Entities;
 using Transferencia.Domain.Interfaces;
 
@@ -26,6 +27,7 @@ namespace Transferencia.Tests.Handlers
         private readonly Mock<ITransferenciaRepository> _transferenciaRepositoryMock = new();
         private readonly Mock<IIdempotenciaRepository> _idempotenciaRepositoryMock = new();
         private readonly Mock<ITransferenciaLogRepository> _logRepositoryMock = new();
+        private readonly Mock<ITransferenciaProducer> _producer = new();
         private readonly EfetuarTransferenciaCommandHandler _handler;
 
         public EfetuarTransferenciaCommandHandlerTests()
@@ -35,7 +37,8 @@ namespace Transferencia.Tests.Handlers
                 _cacheMock.Object,
                 _transferenciaRepositoryMock.Object,
                 _idempotenciaRepositoryMock.Object,
-                _logRepositoryMock.Object
+                _logRepositoryMock.Object,
+                _producer.Object
             );
         }
 

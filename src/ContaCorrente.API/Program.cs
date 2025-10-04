@@ -1,19 +1,24 @@
-using Shared.Middlewares;
 using ContaCorrente.Application.Commands;
-using Shared.Exceptions;
+using ContaCorrente.Application.Consumer;
 using ContaCorrente.Application.Validators;
 using ContaCorrente.Infrastructure;
+using ContaCorrente.Application;
 using FluentValidation;
+using KafkaFlow;
+using KafkaFlow.Serializer;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Shared.Exceptions;
+using Shared.Middlewares;
 using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Services
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddMediatR(cfg =>
 {
@@ -93,10 +98,30 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddKafka(kafka => kafka
+    .AddCluster(cluster => cluster
+        .WithBrokers(new[] { builder.Configuration["Kafka:BootstrapServers"] })
+
+        // Consumer de tarifações realizadas
+        .AddConsumer(consumer => consumer
+            .Topic(builder.Configuration["Kafka:TopicTarifas"])
+            .WithGroupId("conta-corrente-api")
+            .WithBufferSize(100)
+            .WithWorkersCount(1)
+            .WithAutoOffsetReset(AutoOffsetReset.Earliest)
+            .AddMiddlewares(m => m
+                .AddDeserializer<JsonCoreDeserializer>()
+                .AddTypedHandlers(h => h.AddHandler<TarifacaoConsumer>())
+            )
+        )
+    )
+);
+
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+await app.Services.CreateKafkaBus().StartAsync();
 // Middlewares
 app.UseSwagger();
 app.UseSwaggerUI();
