@@ -4,7 +4,7 @@
 
 Este projeto foi desenvolvido como parte do processo seletivo. O objetivo é criar uma API para gerenciamento de contas correntes, autenticação de usuários, movimentações financeiras e transferências entre contas da mesma instituição.
 
-A arquitetura adota boas práticas como autenticação via JWT, persistência com **Dapper**, uso de **cache com Redis** e configuração de containers via **Docker** (com `docker-compose`).
+A arquitetura adota boas práticas como autenticação via JWT, persistência com **Dapper**, uso de **cache com Redis**, mensageria com **Kafka** e configuração de containers via **Docker** (com `docker-compose`).
 
 ---
 
@@ -37,17 +37,19 @@ A arquitetura adota boas práticas como autenticação via JWT, persistência co
 
   * Atualização do status da conta para inativo.
 
+* **Mensageria com Kafka**
+
+  * Implementação de produtores e consumidores com **KafkaFlow**.
+  * Criação do **serviço de Tarifas**, que consome eventos de transferência e publica eventos de tarifação.
+  * A **API de Conta Corrente** consome os eventos de tarifação e debita automaticamente a conta.
+
 ---
 
-## ⚠️ Funcionalidades Não Implementadas
+## ⚠️ Funcionalidades Parciais ou Não Implementadas
 
-* **Transferência entre contas (Testes de Integração)**
+* **Testes de Integração para Transferência entre Contas**
 
-  * Embora o conceito e endpoints tenham sido estruturados, os **testes de integração entre APIs** não foram concluídos devido ao tempo limitado.
-
-* **API de Tarifas com Kafka (Opcional no teste)**
-
-  * Apesar do entendimento conceitual sobre mensageria e Kafka, optei por não implementar para priorizar a entrega no prazo, visto que é uma tecnologia que ainda não utilizei em produção.
+  * Os testes de integração entre APIs não foram concluídos devido ao tempo limitado, mas a estrutura de endpoints e comunicação já está funcional.
 
 ---
 
@@ -58,6 +60,8 @@ A arquitetura adota boas práticas como autenticação via JWT, persistência co
 * **SQLite** – banco de dados relacional
 * **Redis** – cache distribuído
 * **JWT** – autenticação via token
+* **Apache Kafka** – mensageria assíncrona
+* **KafkaFlow** – abstração para Kafka no .NET
 * **Docker** + **Docker Compose** – orquestração e execução dos containers
 
 ---
@@ -76,13 +80,11 @@ A arquitetura adota boas práticas como autenticação via JWT, persistência co
    cd <nome-do-projeto>
    ```
 
-3. Execute os containers (a aplicação + banco de dados + Redis):
+3. Execute os containers (a aplicação + bancos + Redis + Kafka):
 
    ```bash
    docker compose up --build
    ```
-
-   > Obs.: O arquivo está no formato `.yml` em vez de `.yaml`, mas isso não afeta o funcionamento.
 
 4. Acesse a documentação da API via **Swagger**:
 
@@ -94,17 +96,16 @@ A arquitetura adota boas práticas como autenticação via JWT, persistência co
 
 ## 📂 Estrutura dos Containers
 
-* **API** – aplicação principal
+* **ContaCorrente.API** – aplicação principal
+* **Tarifa.Worker** – worker de tarifação conectado ao Kafka
+* **Kafka + Zookeeper** – mensageria
 * **Banco de Dados** – SQLite
 * **Redis** – cache em memória
-* **(Opcional para futura implementação)** – Kafka, consumidores e produtores de mensagens
 
 ---
 
 ## 🔮 Melhorias Futuras
 
-* Implementar testes de integração para transferência entre contas.
-* Adicionar microsserviço de **Tarifas** integrado ao Kafka.
-* Expandir uso de cache Redis para outras consultas críticas.
-* Implementar resiliência de comunicação entre APIs.
-* Ajustar deploy para ambientes Kubernetes (conforme especificação informativa do teste).
+* Implementar políticas de resiliência (retries, circuit breakers).
+* Ajustar deploy para ambientes Kubernetes (infraestrutura já compatível).
+
